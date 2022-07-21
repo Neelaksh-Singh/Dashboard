@@ -1,0 +1,9 @@
+streamlit
+pandas
+numpy
+plotly
+requests
+yfinance
+yahoo_fin
+python-dotenv
+finnhub-python
