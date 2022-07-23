@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 import os
 import finnhub
 from datetime import date,timedelta
+import warnings
+warnings.filterwarnings('ignore')
 
 load_dotenv()
 api_key = os.getenv('api_key')
@@ -31,8 +33,8 @@ def to_human_readable(num):
 
 # ''' Dashboard Sidebar '''
 st.sidebar.title('Choices')
-options = st.sidebar.selectbox('Which View ?',
-['Charts View', 'General View', 'Discussion View'],0)
+options = st.sidebar.selectbox('What are you looking for ? ',
+['Charts', 'General View', 'Trends'],0,help='Choose from the Following Options')
 
 
 # ''' Getting Data '''
@@ -41,7 +43,8 @@ options = st.sidebar.selectbox('Which View ?',
 d1 = pd.DataFrame(si.tickers_sp500())
 d2 = pd.DataFrame(si.tickers_nasdaq())
 d3 = pd.DataFrame(si.tickers_dow())
-d4 = pd.DataFrame(si.tickers_other())
+d4 = pd.DataFrame(si.tickers_nifty50())
+d5 = pd.DataFrame(si.tickers_other())
 
 # Gathering Symbols
 
@@ -49,8 +52,9 @@ s1 = set(symbol for symbol in d1[0].values.tolist())
 s2 = set(symbol for symbol in d2[0].values.tolist())
 s3 = set(symbol for symbol in d3[0].values.tolist())
 s4 = set(symbol for symbol in d4[0].values.tolist())
+s5 = set(symbol for symbol in d4[0].values.tolist())
 
-temp_symbols = set.union(s1,s2,s3,s4)
+temp_symbols = set.union(s1,s2,s3,s4,s5)
 
 # ''' Few of these stocks are undesirable, thus can be ignored.
 
@@ -78,7 +82,10 @@ symbols = sorted(symbols)
 
 #''' Dashboards '''
 
-if options=='Discussion View':
+
+### Discussion View
+
+if options=='Trends':
     symbol = st.sidebar.selectbox('Stock Symbol', symbols,index=23,help='Enter Valid Stock Ticker Symbol')
     st.header('Lastest Discussion on '+ symbol + ' over the past 10 Days')
     
@@ -116,3 +123,91 @@ if options=='Discussion View':
             st.write(data['summary'])
             st.markdown("""<hr style="height:2px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
             
+
+### Charts View
+
+if options=='Charts':
+    
+    symbol = st.sidebar.selectbox('Stock Symbol', symbols,index=23,help='Enter Valid Stock Ticker Symbol')
+    st.header('Chart Dashboard for - '+symbol)
+    st.markdown("""<hr style="height:10px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
+
+    stock = yf.Ticker(symbol)
+    try:
+        
+        st.markdown("""<hr style="height:5px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
+        try:
+            yearly_income_statement = si.get_income_statement(symbol)
+            st.subheader('Yearly Income Statement of '+ str(symbol))
+            st.write(yearly_income_statement)
+
+            
+            # get quarterly income statement data
+            quarterly_income_statement = si.get_income_statement(symbol, yearly = False)
+            st.subheader('Quarterly Income Statement of '+ str(symbol))
+            st.write(quarterly_income_statement)
+
+
+            cashflow = si.get_cash_flow(symbol)
+            st.subheader('Cash Flow Statement of '+ str(symbol))
+            st.write(cashflow)
+        except:
+            pass
+        st.markdown("""<hr style="height:5px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
+        try:
+            st.subheader('Yahoo Finance News for '+ str(symbol))
+            stock_news = news.get_yf_rss(symbol)
+            
+            st.markdown("""<hr style="height:2px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
+            count = 1 
+            for message in stock_news:
+                st.write(str(count)+'. '+message['title'])
+                st.write('Published '+message['published'])
+                st.write(message['summary'])
+                #st.write('_______________________________________________________________')
+                st.markdown("""<hr style="height:2px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
+                count+=1
+        except:
+            pass
+    except:
+        st.error('Please enter a valid stock ticker')
+
+    
+
+
+### General View
+
+if options=='General View':
+    st.header('General Dashboard')
+    st.markdown("""<hr style="height:10px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
+    
+    st.subheader('Table of the top 100 undervalued large caps')
+    large_cap_table = si.get_undervalued_large_caps()
+    st.write(large_cap_table)
+
+    st.subheader('Table of S&P 500')
+    tickers = si.tickers_sp500(include_company_data = True)
+    st.write(tickers)
+
+    st.subheader('Table of Nasdaq')
+    tickers = si.tickers_nasdaq(include_company_data = True)
+    st.write(tickers)
+
+    st.subheader('Table of Nifty 50')
+    tickers = si.tickers_nifty50(include_company_data = True)
+    st.write(tickers)
+
+    st.subheader('Table of Dow Jones')
+    tickers = si.tickers_dow(include_company_data = True)
+    st.write(tickers)
+
+    st.subheader('Table of FTSE 100 Index')
+    tickers = si.tickers_ftse100(include_company_data = True)
+    st.write(tickers)
+
+    
+
+
+
+
+    
